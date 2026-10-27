@@ -16,39 +16,42 @@
 
 | Ukuran Data | Plain For (us/op) | Stream (us/op) | Parallel Stream (us/op) |
 |---:|---:|---:|---:|
-| 1.000 | 2.609 | 3.377 | 9.057 |
-| 100.000 | 394.831 | 504.787 | 369.892 |
-| 5.000.000 | 30.159,388 | 28.692,233 | 21.007,682 |
+| 1.000 | 5,244 | 3,226 | 9,809 |
+| 100.000 | 494,421 | 425,593 | 325,002 |
+| 5.000.000 | 34.481,375 | 29.255,958 | 21.554,932 |
 
 ## 3. Analisis Hasil
 
-Pada 1.000 elemen, perulangan for memiliki waktu rata-rata terendah. Hal ini karena overhead pembagian tugas pada parallelStream belum sebanding dengan pekerjaan yang dilakukan.
+Pada 1.000 elemen, "sequentialStream" memiliki waktu rata-rata terendah, yaitu 3,226 µs/op. Pada 100.000 elemen, "parallelStream" menjadi metode tercepat dengan waktu rata-rata 325,002 µs/op. Pada 5.000.000 elemen, "parallelStream" juga menjadi metode tercepat dengan waktu rata-rata 21.554,932 µs/op.
 
-Pada 100.000 dan 5.000.000 elemen, parallelStream menghasilkan waktu rata-rata terendah dalam pengujian ini. Pemrosesan paralel dapat membagi pekerjaan ke beberapa thread sehingga berpotensi mempercepat pemrosesan data berukuran besar.
+Hasil ini menunjukkan bahwa pemrosesan paralel berpotensi lebih menguntungkan ketika jumlah data meningkat. Namun, hasil benchmark dapat dipengaruhi oleh kondisi CPU, aktivitas sistem, pengelolaan memori, dan overhead thread. Variasi hasil pengukuran juga perlu diperhatikan sebelum menarik kesimpulan umum.
 
-Namun, hasil benchmark dapat dipengaruhi oleh kondisi CPU, aktivitas sistem, pengelolaan memori, dan overhead thread. Pengujian tambahan diperlukan untuk memastikan kestabilan hasil.
+## 4. Analisis Titik Impas (Break-Even Point)
 
-## 4. Simpangan Baku
+Pada pengujian ini, "parallelStream" membutuhkan waktu lebih lama dibandingkan "plainFor" dan "sequentialStream" saat memproses 1.000 data. Namun, pada 100.000 dan 5.000.000 data, "parallelStream" menghasilkan waktu rata-rata paling rendah. Hal ini menunjukkan bahwa pemrosesan paralel berpotensi lebih menguntungkan ketika jumlah data meningkat. Titik impas yang tepat belum dapat ditentukan karena pengujian hanya dilakukan pada tiga ukuran data, yaitu 1.000, 100.000, dan 5.000.000 elemen. Pengujian tambahan dengan ukuran data di antara 1.000 dan 100.000 elemen diperlukan untuk memperkirakan titik impas secara lebih akurat. Hasil juga dapat dipengaruhi oleh spesifikasi perangkat dan kondisi pengujian.
 
-Simpangan baku dari keluaran JMH:
+## 5. Simpangan Baku
 
-| Ukuran Data | Plain For (us/op) | Stream (us/op) | Parallel Stream (us/op) |
-|---:|---:|---:|---:|
-| 1.000 | 0,234 | 0,356 | 0,614 |
-| 100.000 | 104,175 | 109,844 | 55,878 |
-| 5.000.000 | 5.158,228 | 300,247 | 3.769,663 |
+Simpangan baku berdasarkan hasil pengujian JMH terbaru:
 
-Nilai simpangan baku yang lebih kecil menunjukkan hasil pengukuran yang lebih konsisten dalam iterasi yang dilakukan. Nilai yang besar menunjukkan variasi hasil yang lebih tinggi.
+Ukuran Data| Plain For (us/op)| Sequential Stream (us/op)| Parallel Stream (us/op)
+1.000| 1,084| 0,164| 1,531
+100.000| 5,053| 7,148| 83,613
+5.000.000| 1.234,268| 144,287| 4.411,176
 
-## 5. Kesimpulan
+Nilai simpangan baku yang lebih kecil menunjukkan hasil pengukuran yang lebih konsisten dalam iterasi yang dilakukan. Nilai yang besar menunjukkan variasi hasil yang lebih tinggi. Variasi ini dapat dipengaruhi oleh kondisi CPU, aktivitas sistem, dan karakteristik pemrosesan paralel.
 
-Berdasarkan pengujian ini, plain for paling cepat pada 1.000 elemen, sedangkan parallelStream memiliki waktu rata-rata terendah pada 100.000 dan 5.000.000 elemen. Oleh karena itu, pemilihan metode perlu mempertimbangkan ukuran data, overhead pemrosesan paralel, dan kondisi perangkat. Hasil ini berlaku untuk lingkungan pengujian yang digunakan dan tidak dapat digeneralisasi untuk semua komputer.
+## 6. Kesimpulan
 
-## 6. Eksperimen Parallel Stream dan ArrayList
+Berdasarkan hasil pengujian, "sequentialStream" memiliki waktu rata-rata terendah pada 1.000 elemen, yaitu 3,226 µs/op. Sementara itu, "parallelStream" menjadi metode tercepat pada 100.000 elemen dengan waktu 325,002 µs/op dan pada 5.000.000 elemen dengan waktu 21.554,932 µs/op.
 
-Eksperimen dilakukan dengan menambahkan 100.000 data ke dalam "ArrayList" menggunakan "IntStream.range(0, 100_000).parallel().forEach(hasil::add)".
+Hasil ini menunjukkan bahwa pemrosesan paralel berpotensi lebih menguntungkan ketika jumlah data meningkat. Namun, pemilihan metode tetap perlu mempertimbangkan ukuran data, overhead pemrosesan paralel, variasi hasil pengukuran, dan spesifikasi perangkat. Kesimpulan ini berlaku untuk lingkungan pengujian yang digunakan dan belum tentu sama pada komputer lain.
 
-Hasil pengujian sebanyak enam kali:
+## 7. Eksperimen Parallel Stream dan ArrayList
+
+Eksperimen dilakukan dengan menambahkan 100.000 data ke dalam "ArrayList" menggunakan operasi "IntStream.range(0, 100_000).parallel().forEach(hasil::add)".
+
+Hasil pengujian sebanyak enam kali ditampilkan pada tabel berikut.
 
 Percobaan| Data yang Seharusnya| Data yang Terkumpul
 1| 100.000| 100.000
@@ -62,9 +65,11 @@ Hasil menunjukkan bahwa pada tiga percobaan, jumlah data yang terkumpul kurang d
 
 Kesimpulannya, penggunaan "parallelStream()" tidak otomatis membuat operasi aman untuk dijalankan secara paralel. Untuk menghindari masalah tersebut, gunakan koleksi yang sesuai atau operasi pengumpulan data yang aman terhadap pemrosesan paralel.
 
-## 7. Ringkasan Menggunakan Collectors.teeing
+## 8. Ringkasan Menggunakan Collectors.teeing
 
-Program menggunakan "Collectors.teeing()" untuk menggabungkan hasil dua collector, yaitu "Collectors.counting()" dan "Collectors.summingDouble(Transaction::amount)". Kedua hasil tersebut kemudian digunakan untuk membentuk record "Summary" yang berisi jumlah transaksi, total nominal, dan rata-rata nominal.
+Program menggunakan "Collectors.teeing()" untuk menggabungkan hasil dua collector, yaitu "Collectors.counting()" dan "Collectors.reducing()". Collector kedua menjumlahkan nominal transaksi menggunakan "BigDecimal", sehingga total nominal tidak bergantung pada penjumlahan bilangan "double".
+
+Kedua hasil tersebut kemudian digabungkan menjadi record "Summary" yang berisi jumlah transaksi, total nominal, dan rata-rata nominal. Rata-rata dihitung dengan dua angka desimal dan pembulatan "HALF_UP".
 
 Hasil pengujian pada tujuh transaksi:
 
